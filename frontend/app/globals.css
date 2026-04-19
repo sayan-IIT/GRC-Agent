@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  background: #f7f8f4;
+  color: #17201b;
+}
+
+body {
+  min-height: 100vh;
+}
+
+button,
+a {
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+button:active,
+a:active {
+  transform: translateY(1px);
+}
+
