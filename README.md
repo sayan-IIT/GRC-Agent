@@ -1,5 +1,5 @@
 # AI-Powered GRC Risk Intelligence Platform
-
+https://www.loom.com/share/82e828a2431c4e87af55e88623fb8167
 Production-grade demo system for a GRC risk workflow with real CrustData ingestion, Kafka/Redpanda streaming, LangGraph agents, Postgres persistence, and a Next.js investor demo UI.
 
 ## What It Demonstrates
