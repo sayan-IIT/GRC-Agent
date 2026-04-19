@@ -2,27 +2,28 @@
 
 import Link from "next/link";
 import { ArrowDown, ArrowLeft, ArrowUp, Check, DatabaseZap, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import { RiskDetail, api } from "@/lib/api";
 
-export default function RiskDetailPage({ params }: { params: { id: string } }) {
+export default function RiskDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [risk, setRisk] = useState<RiskDetail | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function load() {
-    setRisk(await api.risk(params.id));
-  }
+  const load = useCallback(async () => {
+    setRisk(await api.risk(id));
+  }, [id]);
 
   useEffect(() => {
     load().catch((err) => setError(err.message));
-  }, [params.id]);
+  }, [load]);
 
   async function action(kind: "approve" | "reject") {
     setBusy(kind);
     setError(null);
     try {
-      setRisk(kind === "approve" ? await api.approve(params.id) : await api.reject(params.id));
+      setRisk(kind === "approve" ? await api.approve(id) : await api.reject(id));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Action failed");
     } finally {
@@ -40,9 +41,9 @@ export default function RiskDetailPage({ params }: { params: { id: string } }) {
     <main className="min-h-screen bg-[#f7f8f4]">
       <section className="border-b border-[#d9ded2] bg-white">
         <div className="mx-auto max-w-7xl px-6 py-6">
-          <Link href="/" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-moss hover:text-ink">
+          <Link href="/risk-intelligence" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-moss hover:text-ink">
             <ArrowLeft size={16} />
-            Dashboard
+            Risk Intelligence Scan
           </Link>
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
@@ -94,6 +95,11 @@ export default function RiskDetailPage({ params }: { params: { id: string } }) {
             <h2 className="mb-3 text-lg font-semibold text-ink">Explanation</h2>
             <p className="whitespace-pre-line text-sm leading-6 text-[#445149]">{risk.explanation ?? "No AI explanation yet."}</p>
           </div>
+
+          <div className="rounded border border-[#d9ded2] bg-white p-5">
+            <h2 className="mb-3 text-lg font-semibold text-ink">Actions To be Taken</h2>
+            <div className="min-h-28 rounded border border-dashed border-[#cbd3c7] bg-[#fbfcf8]" />
+          </div>
         </div>
 
         <div className="space-y-6">
@@ -106,11 +112,14 @@ export default function RiskDetailPage({ params }: { params: { id: string } }) {
               <span>Confidence</span>
             </div>
             {risk.signals.map((signal) => (
-              <div key={signal.id} className="grid grid-cols-[1fr_120px_120px_120px] border-b border-[#edf0e9] px-5 py-3 text-sm last:border-b-0">
-                <span className="font-semibold text-ink">{signal.signal_type}</span>
-                <span className="text-moss">{signal.source}</span>
-                <span className="font-mono">{signal.value.toFixed(2)}</span>
-                <span className="font-mono">{signal.confidence.toFixed(2)}</span>
+              <div key={signal.id} className="border-b border-[#edf0e9] px-5 py-3 text-sm last:border-b-0">
+                <div className="grid grid-cols-[1fr_120px_120px_120px]">
+                  <span className="font-semibold text-ink">{signal.signal_type}</span>
+                  <span className="text-moss">{signal.source}</span>
+                  <span className="font-mono">{signal.value.toFixed(2)}</span>
+                  <span className="font-mono">{signal.confidence.toFixed(2)}</span>
+                </div>
+                <SelectedEvidence metadata={signal.metadata_} />
               </div>
             ))}
           </div>
@@ -140,4 +149,38 @@ function Metric({ label, value }: { label: string; value: string }) {
       <div className="mt-1 font-mono text-3xl font-semibold text-ink">{value}</div>
     </div>
   );
+}
+
+function SelectedEvidence({ metadata }: { metadata: Record<string, unknown> }) {
+  const fields = metadata.selected_crustdata_fields;
+  const reason = metadata.ai_selected_reason;
+
+  if (!fields || typeof fields !== "object" || Array.isArray(fields)) {
+    return null;
+  }
+
+  return (
+    <div className="mt-3 rounded border border-[#e4e8df] bg-[#fbfcf8] p-3">
+      <div className="mb-2 text-xs font-semibold uppercase text-[#6b766f]">AI-selected CrustData evidence</div>
+      <div className="grid gap-2 md:grid-cols-2">
+        {Object.entries(fields as Record<string, unknown>).map(([key, value]) => (
+          <div key={key} className="rounded border border-[#edf0e9] bg-white px-3 py-2">
+            <div className="text-[11px] uppercase text-[#6b766f]">{key}</div>
+            <div className="mt-1 break-words font-mono text-xs text-ink">{formatEvidenceValue(value)}</div>
+          </div>
+        ))}
+      </div>
+      {typeof reason === "string" ? <p className="mt-3 text-xs leading-5 text-[#445149]">{reason}</p> : null}
+    </div>
+  );
+}
+
+function formatEvidenceValue(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return "not reported";
+  }
+  if (typeof value === "number") {
+    return Number.isInteger(value) ? value.toLocaleString() : value.toFixed(2);
+  }
+  return String(value);
 }

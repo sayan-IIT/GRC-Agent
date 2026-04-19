@@ -28,6 +28,13 @@ cp .env.example .env
 CRUSTDATA_API_KEY=your_real_key
 ```
 
+Optional: set a Google AI Studio key if you want the Explanation Agent to use Gemini for the final narrative. Without it, the LangGraph agent uses the same selected CrustData evidence with a local deterministic explanation.
+
+```bash
+GOOGLE_AI_API_KEY=your_google_ai_studio_key
+GOOGLE_AI_MODEL=gemini-2.5-flash
+```
+
 The default CrustData URL is:
 
 ```bash
@@ -98,4 +105,3 @@ Fallback to mock due to API failure
 ```
 
 The demo still proceeds with clearly marked mock metadata so the investor flow remains testable.
-

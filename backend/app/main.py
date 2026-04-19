@@ -216,6 +216,7 @@ def _format_explanation(explanation: dict[str, Any]) -> str:
     evidence = "; ".join(explanation["evidence"])
     return (
         f"{explanation['summary']}\n"
+        f"Analysis Method: {explanation['analysis_method']}\n"
         f"Key Drivers: {drivers}\n"
         f"Evidence: {evidence}\n"
         f"Confidence: {explanation['confidence']}"
